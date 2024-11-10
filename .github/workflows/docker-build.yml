@@ -57,16 +57,16 @@ jobs:
 
       # 將 tar 文件上傳到 Artifact
       - name: Upload Docker image tar as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image-tar
           path: "*.tar"
 
       # （可選）創建 Release 並將 tar 文件上傳
-      # - name: Create GitHub Release
-      #   if: github.ref == 'refs/heads/main'
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: my-image.tar
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master'
+        with:
+          files: "*.tar"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
