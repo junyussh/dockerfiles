@@ -1,0 +1,51 @@
+name: Build and Export Docker Image
+
+on:
+  push:
+    branches: [ $default-branch ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 檢出當前倉庫
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Find directories with Dockerfile
+        id: find_dockerfiles
+        run: |
+          # 查找所有包含 Dockerfile 的目錄
+          DOCKER_DIRS=$(find . -type f -name 'Dockerfile' -exec dirname {} \;)
+          echo "DOCKER_DIRS=$DOCKER_DIRS" >> $GITHUB_ENV
+      # 構建 Docker 映像
+      - name: Build Docker image
+        run: |
+          for dir in $DOCKER_DIRS; do
+            IMAGE_NAME=$(basename $dir)  # 使用目錄名作為映像名稱
+            echo "Building Docker image for $dir"
+            docker build -t $IMAGE_NAME -f $dir/Dockerfile $dir
+            docker save $IMAGE_NAME -o $IMAGE_NAME.tar
+          done
+  
+      # # 將 Docker 映像保存為 tar 文件
+      # - name: Save Docker image as tar
+      #   run: |
+      #     docker save my-image:latest -o my-image.tar
+
+      # 將 tar 文件上傳到 Artifact
+      - name: Upload Docker image tar as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image-tar
+          path: "*.tar"
+
+      # （可選）創建 Release 並將 tar 文件上傳
+      # - name: Create GitHub Release
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: my-image.tar
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
